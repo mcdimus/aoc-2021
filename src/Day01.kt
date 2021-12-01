@@ -1,27 +1,8 @@
 fun main() {
-  fun part1(input: List<String>): Int {
-    val measurements = input.map { it.toInt() }
-    var counterOfIncreases = 0
-    for (i in measurements.indices) {
-      if (measurements.getOrElse(i - 1) { Int.MAX_VALUE } < measurements[i]) counterOfIncreases++
-    }
-    return counterOfIncreases
-  }
 
-  fun part2(input: List<String>): Int {
-    val measurements = input.map { it.toInt() }
-    val windowSize = 3
-    var counterOfIncreases = 0
+  fun part1(input: List<String>) = countIncrements(measurements = input.map { it.toInt() })
 
-    var prevSum = Int.MAX_VALUE
-    var currentSum: Int
-    for (i in 0..(measurements.size - measurements.size % windowSize)) {
-      currentSum = measurements.drop(i).take(windowSize).sum()
-      if (prevSum < currentSum) counterOfIncreases++
-      prevSum = currentSum
-    }
-    return counterOfIncreases
-  }
+  fun part2(input: List<String>) = countIncrements(measurements = input.map { it.toInt() }, windowSize = 3)
 
   // test if implementation meets criteria from the description, like:
   val testInput = readInput("Day01_test")
@@ -32,3 +13,7 @@ fun main() {
   println(part1(input))
   println(part2(input))
 }
+
+private fun countIncrements(measurements: List<Int>, windowSize: Int = 1) =
+  measurements.dropLast(windowSize).withIndex()
+    .count { (index, measurement) -> measurement < measurements[index + windowSize] }
