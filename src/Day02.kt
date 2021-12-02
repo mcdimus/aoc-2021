@@ -4,21 +4,13 @@ import Direction.UP
 
 fun main() {
 
-  fun part1(input: List<String>): Int {
-    val moves = input.map { Move.of(it) }
+  fun part1(input: List<String>) = input.map(Move::of)
+    .fold(initial = SimpleLocation.ZERO) { location, move -> location + move }
+    .checksum()
 
-    val finalLocation = moves.fold(initial = Location(x = 0, y = 0)) { location, move -> location.apply(move) }
-
-    return finalLocation.x * finalLocation.y
-  }
-
-  fun part2(input: List<String>): Int {
-    val moves = input.map { Move.of(it) }
-
-    val finalLocation = moves.fold(initial = Location(x = 0, y = 0)) { location, move -> location.applyWithAim(move) }
-
-    return finalLocation.x * finalLocation.y
-  }
+  fun part2(input: List<String>): Int = input.map(Move::of)
+    .fold(initial = AimingLocation.ZERO) { location, move -> location + move }
+    .checksum()
 
   // test if implementation meets criteria from the description, like:
   val testInput = readInput("Day02_test")
@@ -30,9 +22,19 @@ fun main() {
   println(part2(input))
 }
 
-data class Location(val x: Int, val y: Int, val aim: Int = 0) {
+interface Location {
 
-  fun apply(move: Move) = Location(
+  val x: Int
+  val y: Int
+
+  fun checksum() = x * y
+  operator fun plus(move: Move): Location
+
+}
+
+data class SimpleLocation(override val x: Int, override val y: Int) : Location {
+
+  override fun plus(move: Move) = SimpleLocation(
     x = if (move.direction == FORWARD) x + move.value else x,
     y = when (move.direction) {
       UP -> y - move.value
@@ -41,7 +43,17 @@ data class Location(val x: Int, val y: Int, val aim: Int = 0) {
     }
   )
 
-  fun applyWithAim(move: Move) = Location(
+  companion object {
+    val ZERO = SimpleLocation(x = 0, y = 0)
+  }
+
+}
+
+data class AimingLocation(val location: SimpleLocation, val aim: Int) : Location by location {
+
+  constructor(x: Int, y: Int, aim: Int) : this(SimpleLocation(x, y), aim)
+
+  override fun plus(move: Move) = AimingLocation(
     x = if (move.direction == FORWARD) x + move.value else x,
     y = if (move.direction == FORWARD) y + move.value * aim else y,
     aim = when (move.direction) {
@@ -50,6 +62,10 @@ data class Location(val x: Int, val y: Int, val aim: Int = 0) {
       else -> aim
     }
   )
+
+  companion object {
+    val ZERO = AimingLocation(x = 0, y = 0, aim = 0)
+  }
 
 }
 
@@ -60,7 +76,6 @@ enum class Direction {
 data class Move(val direction: Direction, val value: Int) {
 
   companion object {
-
     fun of(value: String) = Move(
       direction = Direction.valueOf(value.substringBefore(' ').uppercase()),
       value = value.substringAfter(' ').toInt()
