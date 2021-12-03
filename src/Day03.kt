@@ -14,28 +14,26 @@ fun main() {
   println(part2(input))
 }
 
-class SubmarineDiagnosticReport(val entries: List<String>) {
+class SubmarineDiagnosticReport(private val entries: List<String>) {
 
-  val bitsPerEntry = entries.first().length
-  val length = entries.size
-  private val pivot = length / 2
-  private val bitCounts = getBitCounts(entries)
-
-  private fun getBitCounts(entries: List<String>): Array<Int> {
-    val bitCounts = Array(bitsPerEntry) { 0 }
-    entries.forEach { x ->
-      x.forEachIndexed { index, c ->
-        bitCounts[index] += c.digitToInt()
-      }
-    }
-    return bitCounts
-  }
+  private val bitsPerEntry = entries.first().length
 
   fun getPowerConsumption(): Int {
+    val pivot = entries.size / 2
+    val bitCounts = getBitCounts(entries)
+
     val gamma = bitCounts.map { if (it > pivot) 1 else 0 }.toDecimalInt()
     val epsilon = bitCounts.map { if (it < pivot) 1 else 0 }.toDecimalInt()
 
     return gamma * epsilon
+  }
+
+  private fun getBitCounts(entries: List<String>): Array<Int> {
+    val bitCounts = Array(bitsPerEntry) { 0 }
+    entries.forEach {
+      it.forEachIndexed { index, bit -> bitCounts[index] += bit.digitToInt() }
+    }
+    return bitCounts
   }
 
   fun getLifeSupportRating(): Int {
@@ -45,11 +43,11 @@ class SubmarineDiagnosticReport(val entries: List<String>) {
     return oxygenGeneratorRating * co2ScrubbingRating
   }
 
-  private fun getRating(predicate: (Int, Int) -> Boolean): Int {
+  private fun getRating(bitCriteria: (Int, Int) -> Boolean): Int {
     val entries = this.entries.toMutableList()
     var rating: Int? = null
     for (i in 0 until bitsPerEntry) {
-      val x = getBitCounts(entries)[i].let { if (predicate(it, entries.size)) 1 else 0 }
+      val x = getBitCounts(entries)[i].let { if (bitCriteria(it, entries.size)) 1 else 0 }
       entries.removeAll { it[i].digitToInt() != x }
       if (entries.size == 1) {
         rating = entries.single().toInt(2)
