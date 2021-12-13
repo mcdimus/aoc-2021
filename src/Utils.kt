@@ -25,3 +25,51 @@ fun <T> List<T>.getColumns(size: Int): List<List<T>> {
   }
   return columns
 }
+
+data class MutableDataPoint<T>(val x: Int, val y: Int, var data: T)
+
+class IntGrid(input: List<String>) : Iterable<MutableDataPoint<Int>> {
+
+  val height = input.size
+  val width = input.first().length
+  val size = height * width
+  private val values = input.mapIndexed { y, row ->
+    row.toCharArray().mapIndexed { x, c -> MutableDataPoint(x = x, y = y, data = c.digitToInt()) }
+  }
+
+  override fun iterator(): Iterator<MutableDataPoint<Int>> = IteratorImpl()
+
+  fun getAdjacentDataPoints(point: MutableDataPoint<Int>) = getAdjacentDataPoints(x = point.x, y = point.y)
+  fun getAdjacentDataPoints(x: Int, y: Int): List<MutableDataPoint<Int>> {
+    val up = values.getOrNull(y - 1)?.get(x)
+    val down = values.getOrNull(y + 1)?.get(x)
+    val left = values[y].getOrNull(x - 1)
+    val right = values[y].getOrNull(x + 1)
+    return listOfNotNull(up, down, left, right)
+  }
+
+  fun getSurroundingPoints(point: MutableDataPoint<Int>) = getSurroundingPoints(x = point.x, y = point.y)
+  fun getSurroundingPoints(x: Int, y: Int): List<MutableDataPoint<Int>> {
+    val upLeft = values.getOrNull(y - 1)?.getOrNull(x - 1)
+    val upRight = values.getOrNull(y - 1)?.getOrNull(x + 1)
+    val downLeft = values.getOrNull(y + 1)?.getOrNull(x - 1)
+    val downRight = values.getOrNull(y + 1)?.getOrNull(x + 1)
+    return getAdjacentDataPoints(x = x, y = y) + listOfNotNull(upLeft, upRight, downLeft, downRight)
+  }
+
+  private inner class IteratorImpl : Iterator<MutableDataPoint<Int>> {
+
+    private var index = 0
+
+    override fun hasNext(): Boolean = index < height * width
+
+    override fun next(): MutableDataPoint<Int> {
+      if (!hasNext()) throw NoSuchElementException()
+      val y = index / width
+      val x = index - y * width
+      index++
+      return values[y][x]
+    }
+  }
+
+}
