@@ -1,34 +1,13 @@
 fun main() {
 
-  fun getCaves(input: List<String>): MutableList<Cave> {
-    val caves = mutableListOf<Cave>()
-
-    input.map { it.split('-') }.map { caveValues ->
-      val caveValue1 = caveValues[0]
-      val caveValue2 = caveValues[1]
-
-      val cave1 = caves.singleOrNull { it.value == caveValue1 } ?: Cave(caveValue1)
-      val cave2 = caves.singleOrNull { it.value == caveValue2 } ?: Cave(caveValue2)
-
-      cave1.adjacentCaves.add(cave2)
-      cave2.adjacentCaves.add(cave1)
-      caves.singleOrNull { it.value == cave1.value } ?: caves.add(cave1)
-      caves.singleOrNull { it.value == cave2.value } ?: caves.add(cave2)
-    }
-    return caves
-  }
-
-  fun part1(input: List<String>) = getCaves(input)
+  fun part1(input: List<String>) = input.toCaves()
     .single { it.value == "start" }
     .findAllPathsTo("end")
     .count()
 
-  fun part2(input: List<String>) = getCaves(input)
+  fun part2(input: List<String>) = input.toCaves()
     .single { it.value == "start" }
     .findAllPathsTo2("end")
-    .map { it.joinToString(",") }
-    .sorted()
-    .onEach { println(it) }
     .count()
 
   // test if implementation meets criteria from the description, like:
@@ -41,51 +20,44 @@ fun main() {
   println(part2(input))
 }
 
+fun List<String>.toCaves(): List<Cave> {
+  val caves = mutableListOf<Cave>()
+
+  map { it.split('-') }.map { (caveValue1, caveValue2) ->
+    val cave1 = caves.singleOrNull { it.value == caveValue1 } ?: Cave(caveValue1).also { caves.add(it) }
+    val cave2 = caves.singleOrNull { it.value == caveValue2 } ?: Cave(caveValue2).also { caves.add(it) }
+
+    cave1.adjacentCaves.add(cave2)
+    cave2.adjacentCaves.add(cave1)
+  }
+
+  return caves
+}
+
 class Cave(val value: String) {
 
-  private var visits = 0
-  private val isLarge = value == value.uppercase()
-  private val isSmall = value == value.lowercase()
-
+  val isSmall = value == value.lowercase()
   val adjacentCaves = mutableListOf<Cave>()
 
-  fun visit() {
-    visits++
-  }
-
-  override fun toString(): String {
-    return value
-  }
+  override fun toString() = value
 
   fun findAllPathsTo(target: String, currentPath: List<String> = emptyList()): List<List<String>> {
-    visit()
-    if (target == value) {
-      return listOf(currentPath + value)
-    }
+    if (target == value) return listOf(currentPath + value)
 
     val cavesToVisit = adjacentCaves.filterNot { it.isSmall && (it.value in currentPath) }
-    if (cavesToVisit.isEmpty()) {
-      return emptyList()
-    }
-    return cavesToVisit
-      .flatMap { it.findAllPathsTo(target, currentPath = currentPath + value) }
+    if (cavesToVisit.isEmpty()) return emptyList()
+    return cavesToVisit.flatMap { it.findAllPathsTo(target, currentPath = currentPath + value) }
   }
 
   fun findAllPathsTo2(target: String, currentPath: List<String> = emptyList()): List<List<String>> {
-    visit()
-    if (target == value) {
-      return listOf(currentPath + value)
-    }
+    if (target == value) return listOf(currentPath + value)
 
     val cavesToVisit = adjacentCaves.filter { isAllowedToVisit(it.value, currentPath + value) }
-    if (cavesToVisit.isEmpty()) {
-      return emptyList()
-    }
-    return cavesToVisit
-      .flatMap { it.findAllPathsTo2(target, currentPath = currentPath + value) }
+    if (cavesToVisit.isEmpty()) return emptyList()
+    return cavesToVisit.flatMap { it.findAllPathsTo2(target, currentPath = currentPath + value) }
   }
 
-  fun isAllowedToVisit(value: String, currentPath: List<String>): Boolean {
+  private fun isAllowedToVisit(value: String, currentPath: List<String>): Boolean {
     val smallCavesCount = currentPath.filter { it == it.lowercase() }.groupingBy { it }.eachCount()
 
     return when {
